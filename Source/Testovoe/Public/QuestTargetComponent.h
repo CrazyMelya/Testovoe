@@ -4,8 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "DataAssets/QuestDataAsset.h"
 #include "QuestTargetComponent.generated.h"
 
+class UWidgetComponent;
+class UQuestManagerComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetCompleted, UQuestTargetComponent*, Target);
 
@@ -17,21 +20,30 @@ class TESTOVOE_API UQuestTargetComponent : public UActorComponent
 public:
 	UQuestTargetComponent();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest")
+	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Target")
 	bool bIsDynamic = false;
 
-	UPROPERTY(BlueprintAssignable, Category = "Quest")
-	FOnTargetCompleted OnTargetCompleted;
-
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	void MarkCompleted();
-
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	bool IsCompleted() const { return bCompleted; }
-
-	UFUNCTION(BlueprintCallable, Category = "Quest")
+	UFUNCTION(BlueprintCallable, Category = "Quest Target")
 	FVector GetWorldLocation() const;
 
 protected:
-	bool bCompleted = false;
+	UFUNCTION()
+	void OnQuestStart(const FName& QuestID, TArray<FQuestObjectiveInfo> Objectives);
+
+	UPROPERTY()
+	UQuestManagerComponent* QuestManager;
+
+	UPROPERTY()
+	TMap<FName, FQuestObjectiveInfo> QuestsInfo;
+
+private:
+	UPROPERTY()
+	UWidgetComponent* MarkerWidgetComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Quest Target")
+	TSubclassOf<UUserWidget> MarkerWidgetClass;
+
+	void CreateMarkerWidgetComponent();
 };

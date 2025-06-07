@@ -2,6 +2,8 @@
 
 
 #include "QuestManagerComponent.h"
+
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "DataAssets/QuestDataAsset.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -15,9 +17,82 @@ UQuestManagerComponent::UQuestManagerComponent()
 	// ...
 }
 
+void UQuestManagerComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::StartQuests);
+}
+
 void UQuestManagerComponent::StartQuest(UQuestDataAsset* Quest)
 {
 	if (!Quest) return;
 
-	UGameplayStatics::Getcomp
+	OnQuestStart.Broadcast(Quest->QuestID, Quest->Objectives);
+}
+
+void UQuestManagerComponent::QuestObjectiveComplete(const FName& QuestID, const FName& ObjectiveTag)
+{
+	if (FQuestProgress* QuestProgress = QuestsProgress.Find(QuestID))
+	{
+		if (QuestProgress->ObjectivesProgress.Contains(ObjectiveTag))
+		{
+			QuestProgress->ObjectivesProgress[ObjectiveTag] = true;
+		}
+		bool QuestCompleted = true;
+		for (auto ObjectiveProgress : QuestProgress->ObjectivesProgress)
+		{
+			if (ObjectiveProgress.Value == false)
+			{
+				QuestCompleted = false;
+				break;
+			}
+		}
+		if (QuestCompleted == true)
+		{
+			OnQuestCompleted.Broadcast(QuestID);
+		}
+	}
+}
+
+void UQuestManagerComponent::StartQuests()
+{
+	auto Quests = GetAllQuestAssets();
+	for (auto Quest : Quests)
+	{
+		FQuestProgress NewQuestProgress;
+		for (auto Objective : Quest->Objectives)
+		{
+			NewQuestProgress.ObjectivesProgress.Add(Objective.ObjectiveTag, false);
+		}
+		QuestsProgress.Add(Quest->QuestID, NewQuestProgress);
+		OnQuestStart.Broadcast(Quest->QuestID, Quest->Objectives);
+	}
+}
+
+TArray<UQuestDataAsset*> UQuestManagerComponent::GetAllQuestAssets()
+{
+	TArray<UQuestDataAsset*> QuestAssets;
+	
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	
+	FARFilter Filter;
+	Filter.PackagePaths.Add(FName("/Game/Quests"));
+	Filter.bRecursivePaths = true;
+	Filter.ClassPaths.Add(UQuestDataAsset::StaticClass()->GetClassPathName());
+
+	// Получаем ассеты
+	TArray<FAssetData> AssetDataList;
+	AssetRegistryModule.Get().GetAssets(Filter, AssetDataList);
+
+	for (const FAssetData& AssetData : AssetDataList)
+	{
+		UQuestDataAsset* Quest = Cast<UQuestDataAsset>(AssetData.GetAsset());
+		if (Quest)
+		{
+			QuestAssets.Add(Quest);
+		}
+	}
+
+	return QuestAssets;
 }

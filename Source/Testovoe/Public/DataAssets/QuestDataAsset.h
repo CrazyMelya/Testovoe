@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "QuestTargetComponent.h"
 #include "Engine/DataAsset.h"
 #include "QuestDataAsset.generated.h"
 

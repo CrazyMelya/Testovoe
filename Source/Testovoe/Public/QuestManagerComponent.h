@@ -9,13 +9,16 @@
 class UQuestDataAsset;
 class UQuestTargetComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnQuestStart, const FName&, QuestID, TArray<FQuestObjectiveInfo>, Objectives);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestCompleted, const FName&, QuestID);
+
 USTRUCT()
 struct FQuestProgress
 {
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FName QuestID;
+	TMap<FName, bool> ObjectivesProgress;
 	
 	UPROPERTY()
 	bool bComplete;
@@ -28,10 +31,26 @@ class TESTOVOE_API UQuestManagerComponent : public UActorComponent
 
 public:
 	UQuestManagerComponent();
+
+	void BeginPlay() override;
 	
 	UFUNCTION(BlueprintCallable)
 	void StartQuest(UQuestDataAsset* Quest);
 
 	UPROPERTY()
-	TArray<FQuestProgress> QuestProgress;
+	TMap<FName, FQuestProgress> QuestsProgress;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnQuestStart OnQuestStart;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnQuestCompleted OnQuestCompleted;
+
+	void QuestObjectiveComplete(const FName& QuestID, const FName& ObjectiveTag);
+
+private:
+	UFUNCTION()
+	void StartQuests();
+
+	TArray<UQuestDataAsset*> GetAllQuestAssets();
 };
