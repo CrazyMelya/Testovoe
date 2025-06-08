@@ -41,19 +41,22 @@ void ATestovoePlayerController::ToggleMap()
 {
 	if (!MapWidget) return;
 
-	if (MapWidget->IsInViewport())
+	if (!QuestJournalWidget->IsInViewport())
 	{
-		MapWidget->RemoveFromParent();
-		bShowMouseCursor = false;
-		SetInputMode(FInputModeGameOnly());
-		GetPawn()->EnableInput(this);
-	}
-	else
-	{
-		MapWidget->AddToViewport();
-		bShowMouseCursor = true;
-		SetInputMode(FInputModeGameAndUI());
-		GetPawn()->DisableInput(this);
+		if (MapWidget->IsInViewport())
+		{
+			MapWidget->RemoveFromParent();
+			bShowMouseCursor = false;
+			SetInputMode(FInputModeGameOnly());
+			GetPawn()->EnableInput(this);
+		}
+		else
+		{
+			MapWidget->AddToViewport();
+			bShowMouseCursor = true;
+			SetInputMode(FInputModeGameAndUI());
+			GetPawn()->DisableInput(this);
+		}
 	}
 }
 
@@ -61,22 +64,25 @@ void ATestovoePlayerController::ToggleQuestJournal()
 {
 	if (!QuestJournalWidget) return;
 
-	if (QuestJournalWidget->IsInViewport())
+	if (!MapWidget->IsInViewport())
 	{
-		QuestJournalWidget->RemoveFromParent();
-		bShowMouseCursor = false;
-		SetInputMode(FInputModeGameOnly());
-		GetPawn()->EnableInput(this);
-	}
-	else
-	{
-		if (auto GameMode = GetWorld()->GetAuthGameMode<ATestovoeGameMode>())
+		if (QuestJournalWidget->IsInViewport())
 		{
-			QuestJournalWidget->SetQuestProgress(GameMode->QuestManager->QuestsProgress);
-			QuestJournalWidget->AddToViewport();
-			bShowMouseCursor = true;
-			SetInputMode(FInputModeGameAndUI());
-			GetPawn()->DisableInput(this);
+			QuestJournalWidget->RemoveFromParent();
+			bShowMouseCursor = false;
+			SetInputMode(FInputModeGameOnly());
+			GetPawn()->EnableInput(this);
+		}
+		else
+		{
+			if (auto GameMode = GetWorld()->GetAuthGameMode<ATestovoeGameMode>())
+			{
+				QuestJournalWidget->SetQuestProgress(GameMode->QuestManager->QuestsProgress);
+				QuestJournalWidget->AddToViewport();
+				bShowMouseCursor = true;
+				SetInputMode(FInputModeGameAndUI());
+				GetPawn()->DisableInput(this);
+			}
 		}
 	}
 }

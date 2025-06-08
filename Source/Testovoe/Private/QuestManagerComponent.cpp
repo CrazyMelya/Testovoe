@@ -3,6 +3,7 @@
 
 #include "QuestManagerComponent.h"
 
+#include "QuestTargetComponent.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 
 #include "DataAssets/QuestDataAsset.h"
@@ -16,7 +17,6 @@ FQuestProgressInfo::FQuestProgressInfo(const UQuestDataAsset* Quest)
 		for (auto Objective : Quest->Objectives)
 		{
 			ObjectivesProgress.Add(Objective.ObjectiveTag, false);
-			ObjectiveMarkers.Add(Objective.ObjectiveTag, Objective.ObjectiveMarkerIcon);
 		}
 	}
 }
@@ -42,6 +42,7 @@ void UQuestManagerComponent::StartQuest(UQuestDataAsset* Quest)
 {
 	if (!Quest) return;
 
+	QuestsProgress.Add(Quest->QuestID, FQuestProgressInfo(Quest));
 	OnQuestStart.Broadcast(Quest->QuestID, Quest->Objectives);
 }
 
@@ -69,14 +70,16 @@ void UQuestManagerComponent::QuestObjectiveComplete(const FName& QuestID, const 
 	}
 }
 
-void UQuestManagerComponent::AddTarget(UQuestTargetComponent* QuestTarget)
+void UQuestManagerComponent::AddTarget(const FName& QuestID, UQuestTargetComponent* QuestTarget)
 {
-	QuestTargets.Add(QuestTarget);
+	if (QuestsProgress.Contains(QuestID))
+		QuestsProgress[QuestID].QuestTargets.Add(QuestTarget->GetObjectiveTag(), QuestTarget);
 }
 
-void UQuestManagerComponent::RemoveTarget(UQuestTargetComponent* QuestTarget)
+void UQuestManagerComponent::RemoveTarget(const FName& QuestID, const UQuestTargetComponent* QuestTarget)
 {
-	QuestTargets.Remove(QuestTarget);
+	if (QuestsProgress.Contains(QuestID))
+		QuestsProgress[QuestID].QuestTargets.Remove(QuestTarget->GetObjectiveTag());
 }
 
 void UQuestManagerComponent::StartQuests()
@@ -84,8 +87,7 @@ void UQuestManagerComponent::StartQuests()
 	auto Quests = GetAllQuestAssets();
 	for (auto Quest : Quests)
 	{
-		QuestsProgress.Add(Quest->QuestID, FQuestProgressInfo(Quest));
-		OnQuestStart.Broadcast(Quest->QuestID, Quest->Objectives);
+		StartQuest(Quest);
 	}
 }
 
@@ -113,4 +115,16 @@ TArray<UQuestDataAsset*> UQuestManagerComponent::GetAllQuestAssets()
 	}
 
 	return QuestAssets;
+}
+
+TArray<UQuestTargetComponent*> UQuestManagerComponent::GetAllTargets()
+{
+	TArray<UQuestTargetComponent*> Targets;
+	for (auto QuestProgressPair : QuestsProgress)
+	{
+		TArray<UQuestTargetComponent*> IntermediateTargets;
+		QuestProgressPair.Value.QuestTargets.GenerateValueArray(IntermediateTargets);
+		Targets.Append(IntermediateTargets);
+	}
+	return Targets;
 }

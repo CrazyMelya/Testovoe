@@ -20,5 +20,4 @@ public:
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	UTexture2D* MarkerIcon;
-	
 };

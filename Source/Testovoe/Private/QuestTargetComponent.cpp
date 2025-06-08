@@ -25,7 +25,6 @@ void UQuestTargetComponent::BeginPlay()
 		if (QuestManager)
 		{
 			QuestManager->OnQuestStart.AddDynamic(this, &ThisClass::OnQuestStart);
-			QuestManager->AddTarget(this);
 		}
 	}
 }
@@ -40,19 +39,26 @@ UTexture2D* UQuestTargetComponent::GetMarkerIcon() const
 	return MarkerIcon;
 }
 
+void UQuestTargetComponent::CompleteQuestObjective()
+{
+	if (!ActiveQuestID.IsNone())
+	{
+		QuestManager->QuestObjectiveComplete(ActiveQuestID, ObjectiveTag);
+		ActiveQuestID = NAME_None;
+		DestroyMarkerWidgetComponent();
+	}
+}
+
 void UQuestTargetComponent::OnQuestStart(const FName& QuestID, TArray<FQuestObjectiveInfo> Objectives)
 {
 	for (auto Objective : Objectives)
 	{
-		if (ComponentTags.Contains(Objective.ObjectiveTag))
+		if (ObjectiveTag == Objective.ObjectiveTag)
 		{
-			if (CurrentQuestID.IsNone())
-			{
-				CurrentQuestID = QuestID;
-				MarkerIcon = Objective.ObjectiveMarkerIcon;
-				CreateMarkerWidgetComponent();
-			}
-			QuestsInfo.Add(QuestID, Objective);
+			QuestManager->AddTarget(QuestID, this);
+			CreateMarkerWidgetComponent();
+			if (ActiveQuestID.IsNone())
+				ActiveQuestID = QuestID;
 		}
 	}
 }
@@ -72,11 +78,19 @@ void UQuestTargetComponent::CreateMarkerWidgetComponent()
 				MarkerWidgetComponent->SetDrawAtDesiredSize(true);
 				MarkerWidgetComponent->SetWidgetClass(MarkerWidgetClass);
 				
-				MarkerWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
+				MarkerWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 150.f));
 				Cast<UMarkerWidget>(MarkerWidgetComponent->GetWidget())->SetMarkerIcon(MarkerIcon);
 			}
 		}
 	}
+}
+
+void UQuestTargetComponent::DestroyMarkerWidgetComponent()
+{
+	MarkerWidgetComponent->Deactivate();
+	MarkerWidgetComponent->UnregisterComponent();
+	MarkerWidgetComponent->DestroyComponent();
+	MarkerWidgetComponent = nullptr;
 }
 
 

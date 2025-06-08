@@ -14,13 +14,9 @@ USTRUCT(BlueprintType)
 struct FQuestObjectiveInfo
 {
 	GENERATED_BODY()
-
-	// Имя/ID цели, по которому будем искать актеров
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName ObjectiveTag;
-    
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UTexture2D* ObjectiveMarkerIcon; // Иконка для отображения
 };
 
 UCLASS(BlueprintType)

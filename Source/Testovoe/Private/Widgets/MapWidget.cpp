@@ -18,17 +18,20 @@ void UMapWidget::NativeConstruct()
 	if (const auto GameMode = GetWorld()->GetAuthGameMode<ATestovoeGameMode>())
 	{
 		QuestManager = GameMode->QuestManager;
-		for (auto Target : QuestManager->GetTargets())
+		for (auto Target : QuestManager->GetAllTargets())
 		{
-			QuestTargets.Add(Target, CreateWidget<UMarkerWidget>(this, MarkerWidgetClass));
-			QuestTargets[Target]->SetMarkerIcon(Target->GetMarkerIcon());
-			MarkerSlots.Add(Target, MarkerCanvas->AddChildToCanvas(QuestTargets[Target]));
-			if (MarkerSlots[Target])
+			if (Target->IsTargetActive())
 			{
-				MarkerSlots[Target]->SetAnchors(FAnchors(0.5, 0.5));
-				MarkerSlots[Target]->SetAlignment(FVector2D(0.5f, 0.5f));
-				MarkerSlots[Target]->SetSize(FVector2D(32.f, 32.f));
-				MarkerSlots[Target]->SetPosition(ConvertWorldToMap(Target->GetWorldLocation()));
+				QuestTargets.Add(Target, CreateWidget<UMarkerWidget>(this, MarkerWidgetClass));
+				QuestTargets[Target]->SetMarkerIcon(Target->GetMarkerIcon());
+				MarkerSlots.Add(Target, MarkerCanvas->AddChildToCanvas(QuestTargets[Target]));
+				if (MarkerSlots[Target])
+				{
+					MarkerSlots[Target]->SetAnchors(FAnchors(0.5, 0.5));
+					MarkerSlots[Target]->SetAlignment(FVector2D(0.5f, 0.5f));
+					MarkerSlots[Target]->SetSize(FVector2D(32.f, 32.f));
+					MarkerSlots[Target]->SetPosition(ConvertWorldToMap(Target->GetWorldLocation()));
+				}
 			}
 		}
 	}

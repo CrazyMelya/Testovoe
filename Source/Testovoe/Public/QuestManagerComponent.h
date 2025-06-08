@@ -28,7 +28,7 @@ struct FQuestProgressInfo
 	FText QuestDescription;
 
 	UPROPERTY(BlueprintReadOnly)
-	TMap<FName, UTexture2D*> ObjectiveMarkers;
+	TMap<FName, UQuestTargetComponent*> QuestTargets;
 	
 	UPROPERTY(BlueprintReadOnly)
 	TMap<FName, bool> ObjectivesProgress;
@@ -61,17 +61,15 @@ public:
 
 	void QuestObjectiveComplete(const FName& QuestID, const FName& ObjectiveTag);
 
-	void AddTarget(UQuestTargetComponent* QuestTarget);
+	void AddTarget(const FName& QuestID, UQuestTargetComponent* QuestTarget);
 
-	void RemoveTarget(UQuestTargetComponent* QuestTarget);
+	void RemoveTarget(const FName& QuestID, const UQuestTargetComponent* QuestTarget);
 
-	TArray<UQuestTargetComponent*> GetTargets() { return QuestTargets; }
+	TArray<UQuestTargetComponent*> GetAllTargets();
 
 private:
 	UFUNCTION()
 	void StartQuests();
 
 	TArray<UQuestDataAsset*> GetAllQuestAssets();
-
-	TArray<UQuestTargetComponent*> QuestTargets;
 };
