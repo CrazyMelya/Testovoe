@@ -6,8 +6,7 @@
 #include "QuestManagerComponent.h"
 #include "TestovoeGameMode.h"
 #include "Components/WidgetComponent.h"
-#include "DataAssets/QuestDataAsset.h"
-#include "Kismet/GameplayStatics.h"
+#include "Widgets/MarkerWidget.h"
 
 
 // Sets default values for this component's properties
@@ -26,6 +25,7 @@ void UQuestTargetComponent::BeginPlay()
 		if (QuestManager)
 		{
 			QuestManager->OnQuestStart.AddDynamic(this, &ThisClass::OnQuestStart);
+			QuestManager->AddTarget(this);
 		}
 	}
 }
@@ -35,14 +35,23 @@ FVector UQuestTargetComponent::GetWorldLocation() const
 	return GetOwner() ? GetOwner()->GetActorLocation() : FVector::ZeroVector;
 }
 
+UTexture2D* UQuestTargetComponent::GetMarkerIcon() const
+{
+	return MarkerIcon;
+}
+
 void UQuestTargetComponent::OnQuestStart(const FName& QuestID, TArray<FQuestObjectiveInfo> Objectives)
 {
 	for (auto Objective : Objectives)
 	{
 		if (ComponentTags.Contains(Objective.ObjectiveTag))
 		{
-			// CreateMarkerWidgetComponent();
-			GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, FString::Printf(TEXT("Quest started: %s"), *QuestID.ToString()));
+			if (CurrentQuestID.IsNone())
+			{
+				CurrentQuestID = QuestID;
+				MarkerIcon = Objective.ObjectiveMarkerIcon;
+				CreateMarkerWidgetComponent();
+			}
 			QuestsInfo.Add(QuestID, Objective);
 		}
 	}
@@ -55,19 +64,16 @@ void UQuestTargetComponent::CreateMarkerWidgetComponent()
 		if (AActor* Owner = GetOwner())
 		{
 			MarkerWidgetComponent = NewObject<UWidgetComponent>(Owner);
-			if (MarkerWidgetComponent)
+			if (MarkerWidgetComponent && MarkerWidgetClass)
 			{
 				MarkerWidgetComponent->RegisterComponent();
 				MarkerWidgetComponent->AttachToComponent(Owner->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 				MarkerWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 				MarkerWidgetComponent->SetDrawAtDesiredSize(true);
-				
-				if (MarkerWidgetClass)
-				{
-					MarkerWidgetComponent->SetWidgetClass(MarkerWidgetClass);
-				}
+				MarkerWidgetComponent->SetWidgetClass(MarkerWidgetClass);
 				
 				MarkerWidgetComponent->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
+				Cast<UMarkerWidget>(MarkerWidgetComponent->GetWidget())->SetMarkerIcon(MarkerIcon);
 			}
 		}
 	}

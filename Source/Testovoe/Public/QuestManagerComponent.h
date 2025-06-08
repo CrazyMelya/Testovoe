@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "DataAssets/QuestDataAsset.h"
 #include "QuestManagerComponent.generated.h"
 
 class UQuestDataAsset;
@@ -12,16 +13,28 @@ class UQuestTargetComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnQuestStart, const FName&, QuestID, TArray<FQuestObjectiveInfo>, Objectives);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestCompleted, const FName&, QuestID);
 
-USTRUCT()
-struct FQuestProgress
+USTRUCT(BlueprintType)
+struct FQuestProgressInfo
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	FQuestProgressInfo() {};
+	FQuestProgressInfo(const UQuestDataAsset* Quest);
+
+	UPROPERTY(BlueprintReadOnly)
+	FText QuestName;
+
+	UPROPERTY(BlueprintReadOnly)
+	FText QuestDescription;
+
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FName, UTexture2D*> ObjectiveMarkers;
+	
+	UPROPERTY(BlueprintReadOnly)
 	TMap<FName, bool> ObjectivesProgress;
 	
-	UPROPERTY()
-	bool bComplete;
+	UPROPERTY(BlueprintReadOnly)
+	bool bComplete = false;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -38,7 +51,7 @@ public:
 	void StartQuest(UQuestDataAsset* Quest);
 
 	UPROPERTY()
-	TMap<FName, FQuestProgress> QuestsProgress;
+	TMap<FName, FQuestProgressInfo> QuestsProgress;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnQuestStart OnQuestStart;
@@ -48,9 +61,17 @@ public:
 
 	void QuestObjectiveComplete(const FName& QuestID, const FName& ObjectiveTag);
 
+	void AddTarget(UQuestTargetComponent* QuestTarget);
+
+	void RemoveTarget(UQuestTargetComponent* QuestTarget);
+
+	TArray<UQuestTargetComponent*> GetTargets() { return QuestTargets; }
+
 private:
 	UFUNCTION()
 	void StartQuests();
 
 	TArray<UQuestDataAsset*> GetAllQuestAssets();
+
+	TArray<UQuestTargetComponent*> QuestTargets;
 };

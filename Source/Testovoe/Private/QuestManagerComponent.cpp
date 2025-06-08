@@ -4,8 +4,22 @@
 #include "QuestManagerComponent.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
+
 #include "DataAssets/QuestDataAsset.h"
-#include "Kismet/GameplayStatics.h"
+
+FQuestProgressInfo::FQuestProgressInfo(const UQuestDataAsset* Quest)
+{
+	if (Quest)
+	{
+		QuestName = Quest->QuestName;
+		QuestDescription = Quest->Description;
+		for (auto Objective : Quest->Objectives)
+		{
+			ObjectivesProgress.Add(Objective.ObjectiveTag, false);
+			ObjectiveMarkers.Add(Objective.ObjectiveTag, Objective.ObjectiveMarkerIcon);
+		}
+	}
+}
 
 // Sets default values for this component's properties
 UQuestManagerComponent::UQuestManagerComponent()
@@ -33,7 +47,7 @@ void UQuestManagerComponent::StartQuest(UQuestDataAsset* Quest)
 
 void UQuestManagerComponent::QuestObjectiveComplete(const FName& QuestID, const FName& ObjectiveTag)
 {
-	if (FQuestProgress* QuestProgress = QuestsProgress.Find(QuestID))
+	if (FQuestProgressInfo* QuestProgress = QuestsProgress.Find(QuestID))
 	{
 		if (QuestProgress->ObjectivesProgress.Contains(ObjectiveTag))
 		{
@@ -55,17 +69,22 @@ void UQuestManagerComponent::QuestObjectiveComplete(const FName& QuestID, const 
 	}
 }
 
+void UQuestManagerComponent::AddTarget(UQuestTargetComponent* QuestTarget)
+{
+	QuestTargets.Add(QuestTarget);
+}
+
+void UQuestManagerComponent::RemoveTarget(UQuestTargetComponent* QuestTarget)
+{
+	QuestTargets.Remove(QuestTarget);
+}
+
 void UQuestManagerComponent::StartQuests()
 {
 	auto Quests = GetAllQuestAssets();
 	for (auto Quest : Quests)
 	{
-		FQuestProgress NewQuestProgress;
-		for (auto Objective : Quest->Objectives)
-		{
-			NewQuestProgress.ObjectivesProgress.Add(Objective.ObjectiveTag, false);
-		}
-		QuestsProgress.Add(Quest->QuestID, NewQuestProgress);
+		QuestsProgress.Add(Quest->QuestID, FQuestProgressInfo(Quest));
 		OnQuestStart.Broadcast(Quest->QuestID, Quest->Objectives);
 	}
 }
@@ -80,8 +99,7 @@ TArray<UQuestDataAsset*> UQuestManagerComponent::GetAllQuestAssets()
 	Filter.PackagePaths.Add(FName("/Game/Quests"));
 	Filter.bRecursivePaths = true;
 	Filter.ClassPaths.Add(UQuestDataAsset::StaticClass()->GetClassPathName());
-
-	// Получаем ассеты
+	
 	TArray<FAssetData> AssetDataList;
 	AssetRegistryModule.Get().GetAssets(Filter, AssetDataList);
 

@@ -7,12 +7,13 @@
 #include "DataAssets/QuestDataAsset.h"
 #include "QuestTargetComponent.generated.h"
 
+class UMarkerWidget;
 class UWidgetComponent;
 class UQuestManagerComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetCompleted, UQuestTargetComponent*, Target);
 
-UCLASS(ClassGroup=(Quest), meta=(BlueprintSpawnableComponent))
+UCLASS(ClassGroup=(Quest), abstract, meta=(BlueprintSpawnableComponent), Blueprintable)
 class TESTOVOE_API UQuestTargetComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -22,11 +23,13 @@ public:
 
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Target")
-	bool bIsDynamic = false;
-
 	UFUNCTION(BlueprintCallable, Category = "Quest Target")
 	FVector GetWorldLocation() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Quest Target")
+	UTexture2D* GetMarkerIcon() const;
+
+	bool GetDynamic() const { return bIsDynamic; }
 
 protected:
 	UFUNCTION()
@@ -38,12 +41,20 @@ protected:
 	UPROPERTY()
 	TMap<FName, FQuestObjectiveInfo> QuestsInfo;
 
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Quest Target")
+	bool bIsDynamic = false;
+
 private:
 	UPROPERTY()
 	UWidgetComponent* MarkerWidgetComponent;
 
-	UPROPERTY(EditAnywhere, Category = "Quest Target")
-	TSubclassOf<UUserWidget> MarkerWidgetClass;
+	UPROPERTY(EditDefaultsOnly, Category = "Quest Target")
+	TSubclassOf<UMarkerWidget> MarkerWidgetClass;
 
 	void CreateMarkerWidgetComponent();
+
+	FName CurrentQuestID;
+	
+	UPROPERTY()
+	UTexture2D* MarkerIcon;
 };
